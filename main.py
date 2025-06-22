@@ -1,20 +1,8 @@
 import requests
+from typing import Optional, Union
+from target import Target
 
-base_url = 'https://static.heartshine.gay'
-generation = 'g4-fim'
-s = 1
-e = 1
-
-
-# https://static.heartshine.gay/g4-fim/s11e01-480p.mp4
-# /s01e02-480p.mp4'
-# https://static.heartshine.gay/g4-fim/s01e01-480p.mp4
-# https://static.heartshine.gay/g4-fim/s01e01-480p.mp4
-# https://static.heartshine.gay/g4-fim/s01e01-480p.mp4
-# https://static.heartshine.gay/g4-fim/s08e01-480p.mp4
-
-
-def pad_left(x, pad = None, target_length = None):
+def pad_left(x: Union[str, int], pad: str, target_length: int):
 
     if target_length is None:
         print('Must supply a target length.')
@@ -34,44 +22,79 @@ def pad_left(x, pad = None, target_length = None):
 
     return res
 
+class MLP():
+    def __init__(self, generation: str, begin_season: int = 1, 
+                 begin_episode: int = 1, export_path: str = '.') -> None:
+        self.gen = generation
+        self.base_url = 'https://static.heartshine.gay'
+        self.s = begin_season
+        self.e = begin_episode
+        self.url_log = []
+        self.url = None
+        self.export_path = export_path
 
+    def validate_url(self) -> None:
+        if self.url is None:
+            raise ValueError('The url cannot be None. Use build_url()')
+
+
+    def log_url(self):
+        self.validate_url()
+        with open(f'{self.export_path}/log.txt', 'a') as f:
+            f.write(self.url + '\n') 
+
+    def build_url(self) -> None:
+        self.url = f'{self.base_url}/{self.gen}/'
+        self.url += f's{pad_left(self.s, '0', 2)}e{pad_left(self.e, '0', 2)}-480p.mp4'
+        self.log_url()
+
+    def download(self) -> Union[str, requests.Response]:
+        self.validate_url()
+
+        r = requests.get(self.url)
+
+        if r.url != self.url:
+            if self.e == 1:
+                print(f'{mlp.s - 1} was the final season. Enjoy!')
+                r = 'break'
+            else:
+                print(f'Episode {self.e - 1} appears to be the last episode of {self.s}.')
+                print(f'Looking for the next season: {self.s + 1}')
+                r = 'continue'
+
+        return r
+        
+    
 
 if __name__ == '__main__':
 
-    # Set the range of episodes
-    last_season = 1
-    s = 1
-    e = 1
+    target = Target('./target')
+    target.build(force = True)
 
+    mlp = MLP(generation = 'g4-fim', begin_season = 14, begin_episode = 23, 
+              export_path = target.target)
 
-    url = f'{base_url}/{generation}/s{pad_left(s, '0', 2)}e{pad_left(e, '0', 2)}-1080p.mp4'
-    file_name = 'test.mp4'
-    # Download the video
+    while True:
 
-    while e < 3 and s == 1:
+        mlp.build_url()
 
-        r = requests.get(url)
-
-        if r.url != url:
-
-            
-            print('Trying next season')
-            s += 1
-            e = 1
-            continue
-
-        file_name = f'{s}-{e}.mp4'
         print("Downloading starts...\n")
-        with open(file_name, 'wb') as f:
+        r = mlp.download()
+        if r == 'continue':
+            mlp.s += 1
+            mlp.e = 1
+            continue
+        if r == 'break':
+            break
+
+        print("Writing to file...\n")
+        file_name = f'{mlp.s}-{mlp.e}.mp4'
+
+        with open(f'{mlp.export_path}/{file_name}', 'wb') as f:
             for chunk in r.iter_content(chunk_size = 255):
                 f.write(chunk)
         print("Download completed..!!")
 
-        e += 1
-    # except Exception as e:
-    #     print(e)
-    # print(r.url)
-
-        # if r.url != url:
+        mlp.e += 1
 
 
