@@ -1,6 +1,7 @@
 import requests
 from typing import Optional, Union
 from target import Target
+from time import sleep
 
 def pad_left(x: Union[str, int], pad: str, target_length: int):
 
@@ -78,7 +79,7 @@ if __name__ == '__main__':
               export_path = target.target)
 
     while True:
-
+        sleep(5)
         mlp.build_url()
 
         print("Downloading starts...\n")
