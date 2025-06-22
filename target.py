@@ -11,7 +11,7 @@ class Target:
             self.target = self._clean_path('right')
 
         else:
-            self.target = f'.\\{self._clean_path('both')}'
+            self.target = f'.\\{self._clean_path("both")}'
 
 
     def build(self, force: bool = False) -> None:

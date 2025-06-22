@@ -49,7 +49,7 @@ class MLP():
 
     def build_url(self) -> None:
         self.url = f'{self.base_url}/{self.gen}/'
-        self.url += f's{pad_left(self.s, '0', 2)}e{pad_left(self.e, '0', 2)}-480p.mp4'
+        self.url += f's{pad_left(self.s, "0", 2)}e{pad_left(self.e, "0", 2)}-1080p.mp4'
         self.log_url()
 
     def download(self) -> Union[str, requests.Response]:
