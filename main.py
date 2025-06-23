@@ -2,6 +2,7 @@ import requests
 from typing import Optional, Union
 from target import Target
 from time import sleep
+from playwright.sync_api import sync_playwright
 
 def pad_left(x: Union[str, int], pad: str, target_length: int):
 
@@ -23,6 +24,10 @@ def pad_left(x: Union[str, int], pad: str, target_length: int):
 
     return res
 
+
+
+
+
 class MLP():
 
 
@@ -36,16 +41,41 @@ class MLP():
         self.url_log = []
         self.url = url
         self.export_path = export_path
+        self.html = None
 
     def validate_url(self) -> None:
         if self.url is None:
             raise ValueError('The url cannot be None. Use build_url()')
+
+    def validate_rendered_html(self) -> None:
+        if self.html is None:
+            raise ValueError('The html content cannot be None. Use get_rendered_html()')
 
 
     def log_url(self):
         self.validate_url()
         with open(f'{self.export_path}/log.txt', 'a') as f:
             f.write(self.url + '\n')  # type: ignore
+
+    def get_rendered_html(self, url: str) -> None:
+        se = f's={pad_left(self.s, "0", 2)}&e={pad_left(self.e, "0", 2)}'
+        url = f'https://fim.heartshine.gay/?{se}&res=1080&lo=0'
+        
+        with sync_playwright() as p:
+            browser = p.chromium.launch( headless = True)
+            page = browser.new_page()
+            page.goto(url)
+            page.wait_for_load_state('networkidle')  # Wait for network to be idle
+            html = page.content()
+            browser.close()
+
+        self.html = html
+    
+    def get_season_name(self):
+        self.validate_rendered_html()
+
+        
+
 
     def build_url(self) -> None:
         self.url = f'{self.base_url}/{self.gen}/'
@@ -73,13 +103,17 @@ class MLP():
 if __name__ == '__main__':
 
     target = Target('./target')
-    target.build(force = True)
+    target.build()
 
     mlp = MLP(generation = 'g4-fim', begin_season = 1, begin_episode = 1, 
               export_path = target.target)
 
     while True:
         sleep(5)
+
+        target_file = f'{mlp.s}-{mlp.e}.mp4'
+
+
         mlp.build_url()
 
         print("Downloading starts...\n")
@@ -92,9 +126,8 @@ if __name__ == '__main__':
             break
 
         print("Writing to file...\n")
-        file_name = f'{mlp.s}-{mlp.e}.mp4'
 
-        with open(f'{mlp.export_path}/{file_name}', 'wb') as f:
+        with open(f'{mlp.export_path}/{target_file}', 'wb') as f:
             for chunk in r.iter_content(chunk_size = 255):
                 f.write(chunk)
         print("Download completed..!!")
