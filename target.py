@@ -11,7 +11,7 @@ class Target:
             self.target = self._clean_path('right')
 
         else:
-            self.target = f'.\\{self._clean_path("both")}'
+            self.target = f'./{self._clean_path("both")}'
 
 
     def build(self, force: bool = False) -> None:
@@ -38,14 +38,14 @@ class Target:
         if path is None:
             path = self._path
         if side in ['left', 'both']:
-            if path[:2] == '.\\':
+            if path[:2] == './':
                 path = path[2:]
 
-            elif path[0] == '\\':
+            elif path[0] == '/':
                 path = path[1:]
 
         if side in ['right', 'both']:
-            if path[-1] == '\\':
+            if path[-1] == '/':
                 path = path[:-1]
 
         return path
@@ -54,11 +54,11 @@ class Target:
     def build_subdirectory(self, subdir: str) -> None:
         subdir = self._clean_path(side = 'both', path = subdir)
 
-        if os.path.exists(f'{self.target}\\{subdir}') and os.path.isdir(f'{self.target}\\{subdir}'):
+        if os.path.exists(f'{self.target}/{subdir}') and os.path.isdir(f'{self.target}/{subdir}'):
             print(f'{subdir} already exists')
 
         else:
-            os.makedirs(f'{self.target}\\{subdir}')
+            os.makedirs(f'{self.target}/{subdir}')
             print(f'created {subdir}')
 
 
@@ -67,7 +67,7 @@ class Target:
         
 
 if __name__ == '__main__':
-    m = Target('.\\target')
+    m = Target(r'./target')
 
     m.build(force = True)
 
