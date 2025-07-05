@@ -149,8 +149,9 @@ if __name__ == '__main__':
     e = 1
     current_season = season_names[s-1]
     current_episodes = episode_names[current_season]
-    while s < max_season and e < len(current_episodes):
-        sleep(5)
+    while s < max_season:
+        sleep(20)
+
         if e == 1:
             target.build_subdirectory(current_season)
 
