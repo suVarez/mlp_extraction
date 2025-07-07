@@ -1,0 +1,5 @@
+plan:
+  Friendship is Magic:
+    prefix: fim # used to get season details
+    suffix: g4-fim # used to download content
+    get_details: True

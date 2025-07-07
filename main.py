@@ -1,41 +1,11 @@
 import requests
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 from target import Target
 from time import sleep
 from playwright.sync_api import sync_playwright
 from lxml import etree as et
-
-def pad_left(x: Union[str, int], pad: str, target_length: int):
-
-    if target_length is None:
-        print('Must supply a target length.')
-        return
-    
-    if pad is None:
-        print('Must supply a value to pad with.')
-        return
-
-    if target_length < len(str(x)):
-        print('Desired length must be larger than the length of the input.')
-        return
-
-    x = str(x)
-
-    res = ''.join([pad for i in range(0, target_length - len(x))]) + x
-
-    return res
-
-def get_rendered_html(url):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(url)
-        page.wait_for_load_state('networkidle')  # Wait for network to be idle
-        html = page.content()
-        browser.close()
-        return html
-
-
+import yaml
+from yaml import SafeLoader
 
 
 
@@ -100,6 +70,34 @@ def get_rendered_html(url: str) -> Optional[str]:
 
     return html
 
+def pad_left(x: Union[str, int], pad: str, target_length: int):
+
+    if target_length is None:
+        print('Must supply a target length.')
+        return
+    
+    if pad is None:
+        print('Must supply a value to pad with.')
+        return
+
+    if target_length < len(str(x)):
+        print('Desired length must be larger than the length of the input.')
+        return
+
+    x = str(x)
+
+    res = ''.join([pad for i in range(0, target_length - len(x))]) + x
+
+    return res
+
+def load_config(path: Optional[str] = None) -> Dict:
+    if path is None:
+        path = './config.yaml'
+
+    with open(path, 'r') as f:
+        conf = yaml.load(f, SafeLoader)
+
+    return conf
 
 
 if __name__ == '__main__':
@@ -107,41 +105,48 @@ if __name__ == '__main__':
     target = Target('./target')
     target.build()
 
-    # loop through all seasons of a generation to get the season and episode 
-    # names
     parser = et.HTMLParser()
-    season_names = []
-    episode_names = {}
-    max_season = None
-    s = 1
-    generation = 'g4-fim'
-    gen_prefix = 'fim'
-    while max_season is None or s <= max_season:
 
-        url = f'https://{gen_prefix}.heartshine.gay/?s={s}&e=1&res=480&lo=0'
+    plan = load_config()['plan']
 
-
-        rendered_html = get_rendered_html(url)
-
-        root = et.fromstring(rendered_html, parser)
-
-        if max_season is None:
-            seasons = root.find('.//select[@id="seasList"]')
-            season_names = [child.text for child in seasons.getchildren()]
-            episode_names = {s:[] for s in season_names}
-            max_season = len(season_names)
-
-        episodes = root.find('.//select[@id="epList"]')
-
-        for child in episodes.getchildren():
-
-            episode_names[season_names[s-1]].append(child.text)
-        print(episode_names)
-        s += 1        
+    for step in plan:
+        season_names = []
+        episode_names = {}
+        max_season = None
+        s = 1
+        suffix = step['suffix']
+        prefix = step['prefix']
 
 
 
-    mlp = MLP(generation = generation, begin_season = 1, begin_episode = 1, 
+        # loop through all seasons of a generation to get the season and episode 
+        # names
+        while max_season is None or s <= max_season:
+
+            url = f'https://{prefix}.heartshine.gay/?s={s}&e=1&res=480&lo=0'
+
+
+            rendered_html = get_rendered_html(url)
+
+            root = et.fromstring(rendered_html, parser)
+
+            if max_season is None:
+                seasons = root.find('.//select[@id="seasList"]')
+                season_names = [child.text for child in seasons.getchildren()]
+                episode_names = {s:[] for s in season_names}
+                max_season = len(season_names)
+
+            episodes = root.find('.//select[@id="epList"]')
+
+            for child in episodes.getchildren():
+
+                episode_names[season_names[s-1]].append(child.text)
+            print(episode_names)
+            s += 1        
+
+
+
+    mlp = MLP(generation = suffix, begin_season = 1, begin_episode = 1, 
               export_path = target.target)
 
 
